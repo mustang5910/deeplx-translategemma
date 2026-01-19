@@ -1,0 +1,18 @@
+type Request {
+	Text       string `json:"text"`
+	SourceLang string `json:"source_lang"`
+	TargetLang string `json:"target_lang"`
+}
+
+type Response {
+	Code       int    `json:"code"`
+	Data       string `json:"data"`
+	SourceLang string `json:"source_lang"`
+	TargetLang string `json:"target_lang"`
+}
+
+service deeplx-api {
+	@handler TranslateHandler
+	post /translate (Request) returns (Response)
+}
+
