@@ -4,13 +4,30 @@
 package logic
 
 import (
+	"bytes"
 	"context"
+	"html/template"
+	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/mustang5910/deeplx-translategemma/internal/svc"
 	"github.com/mustang5910/deeplx-translategemma/internal/types"
+	"github.com/ollama/ollama/api"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
+
+var promptTmpl *template.Template
+
+func init() {
+	const templateText = `You are a professional {{.SourceLang}} ({{.SourceCode}}) to {{.TargetLang}} ({{.TargetCode}}) translator. Your goal is to accurately convey the meaning and nuances of the original {{.SourceLang}} text while adhering to {{.TargetLang}} grammar, vocabulary, and cultural sensitivities.
+Produce only the {{.TargetLang}} translation, without any additional explanations or commentary. Please translate the following {{.SourceLang}} text into {{.TargetLang}}:
+
+
+{{.Text}}`
+	promptTmpl = template.Must(template.New("Prompt").Parse(templateText))
+}
 
 type TranslateLogic struct {
 	logx.Logger
@@ -26,8 +43,91 @@ func NewTranslateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Transla
 	}
 }
 
-func (l *TranslateLogic) Translate(req *types.Request) (resp *types.Response, err error) {
-	// todo: add your logic here and delete this line
+type TranslateParams struct {
+	Text       string
+	SourceLang string
+	SourceCode string
+	TargetLang string
+	TargetCode string
+}
 
-	return
+func buildTranslateParams(req *types.Request) TranslateParams {
+	sCode, sLang := resolveLanguageCode(req.SourceLang)
+	tCode, tLang := resolveLanguageCode(req.TargetLang)
+
+	return TranslateParams{
+		Text:       req.Text,
+		SourceLang: sLang,
+		SourceCode: sCode,
+		TargetLang: tLang,
+		TargetCode: tCode,
+	}
+}
+
+func resolveLanguageCode(input string) (string, string) {
+	if input == "" {
+		return "", ""
+	}
+	upper := strings.ToUpper(input)
+	if info, ok := LanguageMap[upper]; ok {
+		return info.Code, info.Lang
+	}
+	// Fallback for regions like EN-US if not explicitly key-mapped but base EN is
+	if strings.Contains(upper, "-") {
+		parts := strings.Split(upper, "-")
+		if info, ok := LanguageMap[parts[0]]; ok {
+			return info.Code, info.Lang
+		}
+	}
+	// Final fallback
+	return input, input
+}
+
+func (l *TranslateLogic) generate_by_ollama(translateParams TranslateParams) (string, error) {
+	var promptBuffer bytes.Buffer
+	if err := promptTmpl.Execute(&promptBuffer, translateParams); err != nil {
+		return "", err
+	}
+	ollamaUrl, err := url.Parse(l.svcCtx.Config.OllamaUrl)
+	if err != nil {
+		return "", err
+	}
+	client := api.NewClient(ollamaUrl, http.DefaultClient)
+	request := &api.GenerateRequest{
+		Model:  l.svcCtx.Config.Model,
+		Prompt: promptBuffer.String(),
+
+		// set streaming to false
+		Stream: new(bool),
+	}
+
+	value := ""
+
+	err = client.Generate(l.ctx, request, func(resp api.GenerateResponse) error {
+		value = resp.Response
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return value, nil
+}
+
+func (l *TranslateLogic) Translate(req *types.Request) (resp *types.Response, err error) {
+	translateParams := buildTranslateParams(req)
+
+	data, err := l.generate_by_ollama(translateParams)
+	if err != nil {
+		return nil, err
+	}
+
+	resp = &types.Response{
+		Code:       200,
+		Data:       data,
+		SourceLang: translateParams.SourceLang,
+		TargetLang: translateParams.TargetLang,
+	}
+
+	return resp, nil
 }
