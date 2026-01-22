@@ -8,13 +8,12 @@ import (
 	"context"
 	"html"
 	"html/template"
-	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/mustang5910/deeplx-translategemma/internal/svc"
 	"github.com/mustang5910/deeplx-translategemma/internal/types"
-	"github.com/ollama/ollama/api"
+	"github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -95,41 +94,39 @@ func resolveLanguageCode(input string) (string, string) {
 	return input, input
 }
 
-func (l *TranslateLogic) generate_by_ollama(translateParams TranslateParams) (string, error) {
+func (l *TranslateLogic) generate(translateParams TranslateParams) (string, error) {
 	var promptBuffer bytes.Buffer
 	if err := promptTmpl.Execute(&promptBuffer, translateParams); err != nil {
 		return "", err
 	}
-	ollamaUrl, err := url.Parse(l.svcCtx.Config.OllamaUrl)
-	if err != nil {
-		return "", err
-	}
-	client := api.NewClient(ollamaUrl, http.DefaultClient)
-	request := &api.GenerateRequest{
-		Model:  l.svcCtx.Config.Model,
-		Prompt: promptBuffer.String(),
 
-		// set streaming to false
-		Stream: new(bool),
-	}
+	model := l.svcCtx.Config.Model
+	apikey := l.svcCtx.Config.OpenaiKey
+	baseurl := l.svcCtx.Config.Openai
+	message := promptBuffer.String()
 
-	value := ""
+	client := openai.NewClient(
+		option.WithAPIKey(apikey),
+		option.WithBaseURL(baseurl),
+	)
 
-	err = client.Generate(l.ctx, request, func(resp api.GenerateResponse) error {
-		value = resp.Response
-		return nil
+	chatCompletion, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
+		Messages: []openai.ChatCompletionMessageParamUnion{
+			openai.UserMessage(message),
+		},
+		Model: model,
 	})
 	if err != nil {
 		return "", err
 	}
 
-	return value, nil
+	return chatCompletion.Choices[0].Message.Content, nil
 }
 
 func (l *TranslateLogic) Translate(req *types.Request) (resp *types.Response, err error) {
 	translateParams := buildTranslateParams(req)
 
-	data, err := l.generate_by_ollama(translateParams)
+	data, err := l.generate(translateParams)
 	if err != nil {
 		return nil, err
 	}

@@ -2,5 +2,6 @@ Name: deeplx-api
 Host: 0.0.0.0
 Port: 8888
 Model: translategemma
-OllamaUrl: http://127.0.0.1:11434
+Openai: http://127.0.0.1:12434/v1
+OpenaiKey: "skkk"
 Timeout: 30000
