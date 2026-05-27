@@ -6,7 +6,6 @@ package logic
 import (
 	"bytes"
 	"context"
-	"html"
 	"html/template"
 	"strings"
 
@@ -118,15 +117,6 @@ func (l *TranslateLogic) Translate(req *types.Request) (resp *types.Response, er
 	if err != nil {
 		return nil, err
 	}
-
-	// Fix common LLM output issues for tags in Chinese/HTML context
-	data = html.UnescapeString(data)
-	data = strings.ReplaceAll(data, "＜", "<")
-	data = strings.ReplaceAll(data, "＞", ">")
-	data = strings.ReplaceAll(data, "〈", "<")
-	data = strings.ReplaceAll(data, "〉", ">")
-	data = strings.ReplaceAll(data, "《", "<")
-	data = strings.ReplaceAll(data, "》", ">")
 
 	resp = &types.Response{
 		Code:       200,
