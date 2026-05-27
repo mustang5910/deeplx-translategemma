@@ -25,6 +25,5 @@ ENV TZ Asia/Shanghai
 
 WORKDIR /app
 COPY --from=builder /app/deeplx-translategemma /app/deeplx-translategemma
-COPY ./etc /app/etc
 
-CMD ["./deeplx-translategemma", "-f", "etc/deeplx-api.yaml"]
+CMD ["./deeplx-translategemma", "-f", "/app/deeplx-api.yaml"]
