@@ -7,7 +7,8 @@ import "github.com/zeromicro/go-zero/rest"
 
 type Config struct {
 	rest.RestConf
-	Model     string
-	Openai    string
-	OpenaiKey string
+	Model         string
+	Openai        string
+	OpenaiKey     string
+	MaxConcurrent int
 }

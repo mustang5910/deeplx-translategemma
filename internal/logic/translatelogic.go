@@ -113,6 +113,12 @@ func (l *TranslateLogic) generate(translateParams TranslateParams) (string, erro
 func (l *TranslateLogic) Translate(req *types.Request) (resp *types.Response, err error) {
 	translateParams := buildTranslateParams(req)
 
+	// 并发控制：获取信号量槽位（超过上限则排队等待）
+	if err := l.svcCtx.Semaphore.Acquire(l.ctx, 1); err != nil {
+		return nil, err
+	}
+	defer l.svcCtx.Semaphore.Release(1)
+
 	data, err := l.generate(translateParams)
 	if err != nil {
 		return nil, err
