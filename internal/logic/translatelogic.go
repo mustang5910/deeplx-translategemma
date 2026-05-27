@@ -21,22 +21,10 @@ import (
 var promptTmpl *template.Template
 
 func init() {
-	const templateText = `You are a professional {{.SourceLang}} ({{.SourceCode}}) to {{.TargetLang}} ({{.TargetCode}}) translator. Your goal is to accurately convey the meaning and nuances of the original {{.SourceLang}} text while adhering to {{.TargetLang}} grammar, vocabulary, and cultural sensitivities.
-Produce only the {{.TargetLang}} translation, without any additional explanations or commentary.
-CRITICAL: All HTML-style tags (including custom or numbered tags like <i1>, <i2>, etc.) must be preserved EXACTLY as they are in the source text. Do NOT change tag names, do NOT replace them with standard tags, and do NOT remove them. Only translate the text content between the tags.
-CRITICAL: All HTML-style tags (e.g., <i1>, <i2>) must be preserved EXACTLY. Do NOT change tag names, do NOT remove tags, and do NOT add any new tags.
-Example:
-Input: <i1>Hello World</l1>
-Correct Output: <i1>你好世界</l1>
-Incorrect Output: <你好世界> or <i1>你好世界</i1>
-CRITICAL: Do NOT add any extra text, labels, or context. The output must contain ONLY the translated content within the exact same tag structure as the source.
-CRITICAL: If a word or phrase has multiple valid translations, you must choose the single most contextually appropriate one. Do NOT provide synonyms, do NOT list alternatives, and do NOT use separators like "/" or "or" to show options.
-Please translate the following {{.SourceLang}} text into {{.TargetLang}}:
+	const templateText = `Translate the following text into {{.TargetLang}}. Note that you should only output the translated result without any additional explanation:
 
-
-
-
-{{.Text}}`
+{{.Text}}
+`
 	promptTmpl = template.Must(template.New("Prompt").Parse(templateText))
 }
 
