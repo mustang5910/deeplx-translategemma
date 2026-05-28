@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Lint
+        continue-on-error: true
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.4
+          args: --timeout=5m ./...
+
+      - name: Build
+        run: go build -ldflags="-s -w" -v ./...
+
+      - name: Test
+        run: go test -v -race -count=1 ./...

@@ -25,5 +25,9 @@ ENV TZ Asia/Shanghai
 
 WORKDIR /app
 COPY --from=builder /app/deeplx-translategemma /app/deeplx-translategemma
+COPY etc/deeplx-api.yaml.example /app/deeplx-api.yaml.example
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["./deeplx-translategemma", "-f", "/app/deeplx-api.yaml"]

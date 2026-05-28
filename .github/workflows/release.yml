@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Cross-compile binaries
+        run: |
+          for arch in amd64 arm64; do
+            GOOS=linux GOARCH="$arch" go build \
+              -ldflags="-s -w" \
+              -o "deeplx-translategemma-linux-${arch}" \
+              .
+          done
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          files: deeplx-translategemma-linux-*
+          generate_release_notes: true
