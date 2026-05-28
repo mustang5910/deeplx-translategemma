@@ -5,12 +5,15 @@ package svc
 
 import (
 	"github.com/mustang5910/deeplx-translategemma/internal/config"
+	"github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
 	"golang.org/x/sync/semaphore"
 )
 
 type ServiceContext struct {
-	Config    config.Config
-	Semaphore *semaphore.Weighted
+	Config       config.Config
+	Semaphore    *semaphore.Weighted
+	OpenAIClient *openai.Client
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -18,8 +21,15 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	if maxConcurrent <= 0 {
 		maxConcurrent = 10
 	}
+
+	client := openai.NewClient(
+		option.WithAPIKey(c.OpenAIKey),
+		option.WithBaseURL(c.OpenAIBaseURL),
+	)
+
 	return &ServiceContext{
-		Config:    c,
-		Semaphore: semaphore.NewWeighted(maxConcurrent),
+		Config:       c,
+		Semaphore:    semaphore.NewWeighted(maxConcurrent),
+		OpenAIClient: &client,
 	}
 }

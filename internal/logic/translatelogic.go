@@ -15,7 +15,6 @@ import (
 	"github.com/mustang5910/deeplx-translategemma/internal/svc"
 	"github.com/mustang5910/deeplx-translategemma/internal/types"
 	"github.com/openai/openai-go/v3"
-	"github.com/openai/openai-go/v3/option"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -97,15 +96,8 @@ func (l *TranslateLogic) generate(translateParams TranslateParams) (string, erro
 	}
 
 	model := l.svcCtx.Config.Model
-	apiKey := l.svcCtx.Config.OpenAIKey
-	baseURL := l.svcCtx.Config.OpenAIBaseURL
 	message := promptBuffer.String()
 	maxRetries := l.svcCtx.Config.MaxRetries
-
-	client := openai.NewClient(
-		option.WithAPIKey(apiKey),
-		option.WithBaseURL(baseURL),
-	)
 
 	var lastErr error
 	for attempt := 0; attempt <= maxRetries; attempt++ {
@@ -119,7 +111,7 @@ func (l *TranslateLogic) generate(translateParams TranslateParams) (string, erro
 			}
 		}
 
-		chatCompletion, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
+		chatCompletion, err := l.svcCtx.OpenAIClient.Chat.Completions.New(l.ctx, openai.ChatCompletionNewParams{
 			Messages: []openai.ChatCompletionMessageParamUnion{
 				openai.UserMessage(message),
 			},
