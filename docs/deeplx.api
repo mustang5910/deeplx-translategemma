@@ -14,5 +14,8 @@ type Response {
 service deeplx-api {
 	@handler TranslateHandler
 	post /translate (Request) returns (Response)
+
+	@handler HealthHandler
+	get /health returns (string)
 }
 
