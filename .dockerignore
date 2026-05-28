@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+/app/
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test cache
+.test/
+*.test
+
+# Documentation
+docs/
+README.md
+*.md
+
+# CI/CD & config
+.github/
+.omo/
+
+# Docker
+Dockerfile
+docker-compose.yml*
+.dockerignore
+
+# Dependencies (they'll be downloaded in the builder stage)
+vendor/
+
+# Temporary
+tmp/
+temp/

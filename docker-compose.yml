@@ -1,0 +1,41 @@
+services:
+  deeplx-translategemma:
+    build:
+      context: .
+      args:
+        # Override at build time: docker compose build --build-arg GO_VERSION=1.25
+        GO_VERSION: "1.25"
+        ALPINE_VERSION: "3.23"
+    image: deeplx-translategemma:latest
+    container_name: deeplx-translategemma
+    restart: unless-stopped
+
+    ports:
+      - "${PORT:-8888}:8888"
+
+    # Mount custom configuration.
+    # On first run the entrypoint clones deeplx-api.yaml.example if no config exists.
+    # To provide your own config, create etc/deeplx-api.yaml on the host first.
+    volumes:
+      - ./etc/deeplx-api.yaml:/app/deeplx-api.yaml:ro
+
+    environment:
+      - TZ=Asia/Shanghai
+
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8888/translate"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+    # Attach to the same network as your LLM backend (Ollama, etc.)
+    networks:
+      - translate-net
+
+    # Uncomment if your LLM backend uses host networking:
+    # network_mode: host
+
+networks:
+  translate-net:
+    driver: bridge
