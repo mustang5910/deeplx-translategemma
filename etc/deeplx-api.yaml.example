@@ -9,3 +9,6 @@ OpenAIKey: "skkk"
 # 不填则使用代码内置的默认模板。
 # Prompt: "Translate the following text into {{.TargetLang}}. Note that you should only output the translated result without any additional explanation:\n\n{{.Text}}\n"
 MaxConcurrent: 10
+# MaxRetries: OpenAI API 调用失败时的最大重试次数，设为 0 则不重试（默认）。
+# 重试采用指数退避策略，间隔为 1s/2s/4s/8s... 上限 30s，并带有随机抖动。
+MaxRetries: 0

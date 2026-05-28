@@ -6,8 +6,11 @@ package logic
 import (
 	"bytes"
 	"context"
+	"errors"
 	"html/template"
+	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/mustang5910/deeplx-translategemma/internal/svc"
 	"github.com/mustang5910/deeplx-translategemma/internal/types"
@@ -21,6 +24,11 @@ const defaultPromptTemplate = `Translate the following text into {{.TargetLang}}
 
 {{.Text}}
 `
+
+const (
+	retryBaseDelay   = 1 * time.Second
+	retryMaxDelay    = 30 * time.Second
+)
 
 type TranslateLogic struct {
 	logx.Logger
@@ -92,23 +100,63 @@ func (l *TranslateLogic) generate(translateParams TranslateParams) (string, erro
 	apiKey := l.svcCtx.Config.OpenAIKey
 	baseURL := l.svcCtx.Config.OpenAIBaseURL
 	message := promptBuffer.String()
+	maxRetries := l.svcCtx.Config.MaxRetries
 
 	client := openai.NewClient(
 		option.WithAPIKey(apiKey),
 		option.WithBaseURL(baseURL),
 	)
 
-	chatCompletion, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
-		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.UserMessage(message),
-		},
-		Model: model,
-	})
-	if err != nil {
-		return "", err
+	var lastErr error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			delay := retryBackoff(attempt)
+			l.Infof("OpenAI API retry %d/%d after %v", attempt, maxRetries, delay)
+			select {
+			case <-l.ctx.Done():
+				return "", l.ctx.Err()
+			case <-time.After(delay):
+			}
+		}
+
+		chatCompletion, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
+			Messages: []openai.ChatCompletionMessageParamUnion{
+				openai.UserMessage(message),
+			},
+			Model: model,
+		})
+		if err == nil {
+			return chatCompletion.Choices[0].Message.Content, nil
+		}
+
+		lastErr = err
+		if !isRetryable(err) {
+			return "", err
+		}
 	}
 
-	return chatCompletion.Choices[0].Message.Content, nil
+	return "", lastErr
+}
+
+func retryBackoff(attempt int) time.Duration {
+	delay := min(retryBaseDelay*(1<<(attempt-1)), retryMaxDelay)
+	jitter := time.Duration(rand.Int63n(int64(delay) / 2))
+	return delay/2 + jitter
+}
+
+func isRetryable(err error) bool {
+	var apiErr *openai.Error
+	if errors.As(err, &apiErr) {
+		switch {
+		case apiErr.StatusCode == 429:
+			return true
+		case apiErr.StatusCode >= 500:
+			return true
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func (l *TranslateLogic) Translate(req *types.Request) (resp *types.Response, err error) {

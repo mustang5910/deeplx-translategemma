@@ -12,4 +12,5 @@ type Config struct {
 	OpenAIKey     string
 	Prompt        string
 	MaxConcurrent int
+	MaxRetries    int
 }
