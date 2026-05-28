@@ -57,9 +57,9 @@ RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 8888
 
-# Health check — probes the translate endpoint to confirm the service is alive
+# Health check — probes the dedicated /health endpoint
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget -q -O /dev/null http://127.0.0.1:8888/translate || exit 1
+    CMD wget -q -O /dev/null http://127.0.0.1:8888/health || exit 1
 
 USER appuser
 

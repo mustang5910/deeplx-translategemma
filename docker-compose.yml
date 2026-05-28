@@ -23,7 +23,7 @@ services:
       - TZ=Asia/Shanghai
 
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8888/translate"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8888/health"]
       interval: 30s
       timeout: 3s
       retries: 3
