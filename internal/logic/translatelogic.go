@@ -17,27 +17,28 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-var promptTmpl *template.Template
-
-func init() {
-	const templateText = `Translate the following text into {{.TargetLang}}. Note that you should only output the translated result without any additional explanation:
+const defaultPromptTemplate = `Translate the following text into {{.TargetLang}}. Note that you should only output the translated result without any additional explanation:
 
 {{.Text}}
 `
-	promptTmpl = template.Must(template.New("Prompt").Parse(templateText))
-}
 
 type TranslateLogic struct {
 	logx.Logger
-	ctx    context.Context
-	svcCtx *svc.ServiceContext
+	ctx        context.Context
+	svcCtx     *svc.ServiceContext
+	promptTmpl *template.Template
 }
 
 func NewTranslateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *TranslateLogic {
+	promptText := svcCtx.Config.Prompt
+	if promptText == "" {
+		promptText = defaultPromptTemplate
+	}
 	return &TranslateLogic{
-		Logger: logx.WithContext(ctx),
-		ctx:    ctx,
-		svcCtx: svcCtx,
+		Logger:     logx.WithContext(ctx),
+		ctx:        ctx,
+		svcCtx:     svcCtx,
+		promptTmpl: template.Must(template.New("Prompt").Parse(promptText)),
 	}
 }
 
@@ -83,7 +84,7 @@ func resolveLanguageCode(input string) (string, string) {
 
 func (l *TranslateLogic) generate(translateParams TranslateParams) (string, error) {
 	var promptBuffer bytes.Buffer
-	if err := promptTmpl.Execute(&promptBuffer, translateParams); err != nil {
+	if err := l.promptTmpl.Execute(&promptBuffer, translateParams); err != nil {
 		return "", err
 	}
 

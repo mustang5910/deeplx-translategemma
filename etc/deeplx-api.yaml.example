@@ -4,4 +4,8 @@ Port: 8888
 Model: translategemma
 OpenAIBaseURL: http://127.0.0.1:12434/v1
 OpenAIKey: "skkk"
+# Prompt 是发送给 OpenAI 模型的翻译提示词模板。
+# 模板变量: {{.Text}} - 待翻译文本, {{.TargetLang}} - 目标语言名称
+# 不填则使用代码内置的默认模板。
+# Prompt: "Translate the following text into {{.TargetLang}}. Note that you should only output the translated result without any additional explanation:\n\n{{.Text}}\n"
 MaxConcurrent: 10

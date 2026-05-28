@@ -10,5 +10,6 @@ type Config struct {
 	Model         string
 	OpenAIBaseURL string
 	OpenAIKey     string
+	Prompt        string
 	MaxConcurrent int
 }
