@@ -1,20 +1,21 @@
 # DeepLX-TranslateGemma
 
-这是一个基于 Go (Go-Zero) 开发的翻译服务，它提供了与 **DeepLX** 兼容的 API 接口，底层使用 **Ollama** 运行 Google 的 **TranslateGemma** 模型进行高质量翻译。
+这是一个基于 Go (Go-Zero) 开发的翻译服务，它提供了与 **DeepLX** 兼容的 API 接口，底层通过 **OpenAI-compatible API** 调用翻译模型进行高质量翻译。
 
 ## ✨ 特性
 
 - **DeepLX 兼容**: API 请求参数与返回结构完全兼容 DeepLX，可直接替换原有服务使用。
-- **本地大模型**: 利用 Ollama 本地运行 `translategemma` 模型，隐私安全，无需联网调用外部收费 API。
+- **本地大模型**: 通过 OpenAI-compatible API 调用本地模型（如 Ollama 的 `translategemma`），隐私安全，无需联网调用外部收费 API。
 - **高性能**: 基于 Go-Zero 框架，并发性能优秀。
 
 ## 🛠️ 前置要求
 
 在运行本项目之前，请确保你已经安装并配置好了以下环境：
 
-1. **Ollama**: 需要安装并运行 Ollama 服务。
-2. **TranslateGemma 模型**: 在 Ollama 中下载该模型。
+1. **Ollama**（或其他 OpenAI-compatible API 服务）: 需要安装并运行。
+2. **翻译模型**: 通过 API 可用的模型（如 Ollama 中的 `translategemma`）。
    ```bash
+   # 以 Ollama 为例
    ollama pull translategemma
    ```
 3. **Go 环境** (如果是源码编译运行): Go 1.20+
@@ -35,13 +36,15 @@
    ```
 
 3. **配置**
-   检查 `etc/deeplx-api.yaml` 文件，确保 Ollama 地址正确。
+   检查 `etc/deeplx-api.yaml` 文件，确保配置正确。
    ```yaml
    Name: deeplx-api
    Host: 0.0.0.0
    Port: 8888
    Model: translategemma
-   OllamaUrl: http://127.0.0.1:11434
+   OpenAIBaseURL: http://127.0.0.1:12434/v1
+   OpenAIKey: skkk
+   MaxConcurrent: 10
    ```
 
 4. **运行**
@@ -63,11 +66,13 @@
 
 配置文件位于 `etc/deeplx-api.yaml`：
 
-| 配置项      | 说明                   | 默认值                   |
-| ----------- | ---------------------- | ------------------------ |
-| `Port`      | 服务监听端口           | `8888`                   |
-| `Model`     | 使用的 Ollama 模型名称 | `translategemma`         |
-| `OllamaUrl` | Ollama 服务地址        | `http://127.0.0.1:11434` |
+| 配置项          | 说明                           | 默认值                           |
+| --------------- | ------------------------------ | -------------------------------- |
+| `Port`          | 服务监听端口                   | `8888`                           |
+| `Model`         | 使用的模型名称                 | `translategemma`                 |
+| `OpenAIBaseURL` | OpenAI-compatible API 基础地址 | `http://127.0.0.1:12434/v1`      |
+| `OpenAIKey`     | API 密钥                       | (空)                             |
+| `MaxConcurrent` | 最大并发翻译请求数             | `10`                             |
 
 ## 🔌 API 接口
 

@@ -88,13 +88,13 @@ func (l *TranslateLogic) generate(translateParams TranslateParams) (string, erro
 	}
 
 	model := l.svcCtx.Config.Model
-	apikey := l.svcCtx.Config.OpenaiKey
-	baseurl := l.svcCtx.Config.Openai
+	apiKey := l.svcCtx.Config.OpenAIKey
+	baseURL := l.svcCtx.Config.OpenAIBaseURL
 	message := promptBuffer.String()
 
 	client := openai.NewClient(
-		option.WithAPIKey(apikey),
-		option.WithBaseURL(baseurl),
+		option.WithAPIKey(apiKey),
+		option.WithBaseURL(baseURL),
 	)
 
 	chatCompletion, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
